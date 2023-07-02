@@ -11,10 +11,10 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
+const __dirname = path.resolve();
 
 // Routes
 import GitRepoRouter from './routes/GitRepoRouter.js';
-const __dirname = path.resolve();
 app.use('/', GitRepoRouter);
 
 import GptRouter from './routes/GptRouter.js';

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
+import {SERVER_URL} from '../constant.js'
 
 export const getRepoDetails = async (req, res) => {
     const { githubname, reponame } = req.params;
@@ -34,7 +35,7 @@ export const getRepoDetails = async (req, res) => {
             const zip = new AdmZip(archiveFilePath);
             const targetDirectory = './extracted-files';
 
-            zip.extractAllTo(targetDirectory, /* overwrite */ true);
+            zip.extractAllTo(targetDirectory,true);
 
             const packageJsonPath = findPackageJson(targetDirectory);
 
@@ -72,8 +73,19 @@ export const getRepoDetails = async (req, res) => {
         return searchPackageJson(directoryPath);
     };
 
-    await downloadRepositoryFiles(githubname, reponame); 
-    await extractFilesAndCheckPackageJson('repository.zip');
+    try {
+        await downloadRepositoryFiles(githubname, reponame); 
+        const packageJsonContent = await extractFilesAndCheckPackageJson('repository.zip'); 
 
-    res.send(`GitHub Name: ${githubname}, Repo Name: ${reponame}`);
+        if (packageJsonContent) {
+            const gptResponse = await axios.post(`${SERVER_URL}/gpt`, { packageJsonContent });
+            console.log('Response from gpt:', gptResponse.data);
+            res.send(`GitHub Name: ${githubname}, Repo Name: ${reponame}`);
+        } else {
+            res.status(404).send('No package.json found in the repository.');
+        }
+    } catch (error) {
+        console.error('Error processing repository details:', error.message);
+        res.status(500).send('Internal server error.');
+    }
 };

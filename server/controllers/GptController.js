@@ -1,4 +1,4 @@
-import { generateResponse } from "../models/GptModel";
+import { generateResponse } from "../models/GptModel.js";
 
 async function processRequest(req, res) {
     try {

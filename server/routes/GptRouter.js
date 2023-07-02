@@ -1,7 +1,6 @@
 import express from 'express';
-import { processRequest } from '../controllers/GptController';
-
 const router = express.Router();
+import { processRequest } from '../controllers/GptController.js';
 
 router.post('/', processRequest);
 export default router;

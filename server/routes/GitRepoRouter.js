@@ -1,4 +1,3 @@
-// GitRepoRouter.js
 import express from 'express';
 const router = express.Router();
 import { getRepoDetails } from '../controllers/GitRepoController.js';
