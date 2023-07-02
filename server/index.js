@@ -17,6 +17,9 @@ import GitRepoRouter from './routes/GitRepoRouter.js';
 const __dirname = path.resolve();
 app.use('/', GitRepoRouter);
 
+import GptRouter from './routes/GptRouter.js';
+app.use('/gpt', GptRouter);
+
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

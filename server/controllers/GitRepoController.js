@@ -2,11 +2,11 @@ import axios from 'axios';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 
-export const getRepoDetails = (req, res) => {
+export const getRepoDetails = async (req, res) => {
     const { githubname, reponame } = req.params;
+
     const downloadRepositoryFiles = async (githubname, reponame) => {
         try {
-            // Make a request to the GitHub API to get the archive link
             const response = await axios.get(`https://api.github.com/repos/${githubname}/${reponame}/zipball`, {
                 headers: {
                     Accept: 'application/vnd.github.v3+json',
@@ -14,13 +14,10 @@ export const getRepoDetails = (req, res) => {
                 responseType: 'stream',
             });
 
-            // Create a write stream to save the downloaded archive
             const writeStream = fs.createWriteStream('repository.zip');
 
-            // Pipe the response stream to the write stream to download the file
             response.data.pipe(writeStream);
 
-            // Wait for the file to finish downloading
             await new Promise((resolve, reject) => {
                 writeStream.on('finish', resolve);
                 writeStream.on('error', reject);
@@ -31,24 +28,18 @@ export const getRepoDetails = (req, res) => {
             console.error('Error downloading repository files:', error.message);
         }
     };
-    downloadRepositoryFiles(`${githubname}`, `${reponame}`);
 
-    const extractFilesAndCheckPackageJson = (archiveFilePath) => {
+    const extractFilesAndCheckPackageJson = async (archiveFilePath) => {
         try {
-            // Load the downloaded archive using AdmZip
             const zip = new AdmZip(archiveFilePath);
-            // Specify the target directory path
             const targetDirectory = './extracted-files';
-            // Extract all files from the archive
-            zip.extractAllTo(targetDirectory, /* overwrite */ true);
-            // Check if package.json is present in the extracted files
-            const packageJsonPath = findPackageJson(/* target directory path */);
-            
-            if (packageJsonPath) {
-                // Read the content of package.json
-                const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
 
-                // Perform your desired action with the package.json content
+            zip.extractAllTo(targetDirectory, /* overwrite */ true);
+
+            const packageJsonPath = findPackageJson(targetDirectory);
+
+            if (packageJsonPath) {
+                const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
                 console.log(packageJsonContent);
             } else {
                 console.log('No package.json found in the extracted files.');
@@ -59,33 +50,30 @@ export const getRepoDetails = (req, res) => {
     };
 
     const findPackageJson = (directoryPath) => {
-        // Recursive function to search for package.json in the directory and its subdirectories
         const searchPackageJson = (directory) => {
             const files = fs.readdirSync(directory);
             for (const file of files) {
                 const filePath = `${directory}/${file}`;
 
-                // Check if the current file is package.json
                 if (file === 'package.json') {
-                    return filePath; // Return the path to package.json if found
+                    return filePath;
                 }
 
-                // If the current file is a directory, recursively search within it
                 if (fs.statSync(filePath).isDirectory()) {
                     const foundPackageJson = searchPackageJson(filePath);
                     if (foundPackageJson) {
-                        return foundPackageJson; // Return the path to package.json if found within the subdirectory
+                        return foundPackageJson;
                     }
                 }
             }
-            return null; // Return null if package.json is not found
+            return null;
         };
 
         return searchPackageJson(directoryPath);
     };
-    extractFilesAndCheckPackageJson('repository.zip');
 
+    await downloadRepositoryFiles(githubname, reponame); 
+    await extractFilesAndCheckPackageJson('repository.zip');
 
-    // Send a response
     res.send(`GitHub Name: ${githubname}, Repo Name: ${reponame}`);
 };
