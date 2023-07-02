@@ -1,7 +1,8 @@
 import axios from 'axios';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
-import {SERVER_URL} from '../constant.js'
+import { SERVER_URL } from '../constant.js'
+import fsExtra from 'fs-extra';
 
 export const getRepoDetails = async (req, res) => {
     const { githubname, reponame } = req.params;
@@ -35,13 +36,14 @@ export const getRepoDetails = async (req, res) => {
             const zip = new AdmZip(archiveFilePath);
             const targetDirectory = './extracted-files';
 
-            zip.extractAllTo(targetDirectory,true);
+            zip.extractAllTo(targetDirectory, true);
 
             const packageJsonPath = findPackageJson(targetDirectory);
 
             if (packageJsonPath) {
                 const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
                 console.log(packageJsonContent);
+                return packageJsonContent;
             } else {
                 console.log('No package.json found in the extracted files.');
             }
@@ -74,16 +76,23 @@ export const getRepoDetails = async (req, res) => {
     };
 
     try {
-        await downloadRepositoryFiles(githubname, reponame); 
-        const packageJsonContent = await extractFilesAndCheckPackageJson('repository.zip'); 
+        await downloadRepositoryFiles(githubname, reponame);
+        const packageJsonContent = await extractFilesAndCheckPackageJson('repository.zip');
 
         if (packageJsonContent) {
             const gptResponse = await axios.post(`${SERVER_URL}/gpt`, { packageJsonContent });
             console.log('Response from gpt:', gptResponse.data);
-            res.send(`GitHub Name: ${githubname}, Repo Name: ${reponame}`);
+            res.send(gptResponse.data);
         } else {
             res.status(404).send('No package.json found in the repository.');
         }
+
+        // Delete the repository.zip file
+        await fs.promises.unlink('repository.zip');
+
+        // Delete the extracted-files directory
+        await fsExtra.remove('./extracted-files');
+
     } catch (error) {
         console.error('Error processing repository details:', error.message);
         res.status(500).send('Internal server error.');
