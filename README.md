@@ -1,6 +1,6 @@
 # GPT-3 Readme Generator
 <div>
-<img src='http://localhost:5173/src/assets/GitHub_Invertocat_Logo.svg' align='center' width='full'/>
+<img src='https://raw.githubusercontent.com/ajaysinghpanwar2002/readme-gpt/e5573f6249cb81507f5db396c35f67fd34ce4f6e/client/src/assets/GitHub_Invertocat_Logo.svg' />
 </div>
 
 ## Overview
